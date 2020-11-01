@@ -1,6 +1,8 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth.models import User,auth
+from django.contrib.auth.models import User, auth
+from contacts.models import Contact
+
 
 def register(request):
     if request.method == 'POST':
@@ -13,52 +15,59 @@ def register(request):
 
         if password == password2:
             if User.objects.filter(username=username).exists():
-                messages.error(request,'That user is taken')
+                messages.error(request, 'That user is taken')
                 return redirect('register')
             else:
                 if User.objects.filter(email=email).exists():
-                    messages.error(request,'That email is taken')
+                    messages.error(request, 'That email is taken')
                     return redirect('register')
                 else:
-                    user = User.objects.create_user(username=username,first_name = first_name,
-                    password = password,last_name=last_name,email = email)
+                    user = User.objects.create_user(username=username, first_name=first_name,
+                                                    password=password, last_name=last_name, email=email)
 
                     user.save()
-                    messages.success(request,"Successful")
+                    messages.success(request, "Successful")
                     return redirect('login')
         else:
-            messages.error(request,"password dont match")
+            messages.error(request, "password dont match")
             return redirect('register')
 
     else:
-        return render(request,'accounts/register.html')
+        return render(request, 'accounts/register.html')
+
 
 def login(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
 
-        user = auth.authenticate(username=username,password = password)
+        user = auth.authenticate(username=username, password=password)
         if user is not None:
-            auth.login(request,user)
-            messages.success(request,"Logged in")
-            return render(request,'accounts/dashboard.html')
-        
+            auth.login(request, user)
+            messages.success(request, "Logged in")
+            return render(request, 'accounts/dashboard.html')
+
         else:
-            messages.error(request,'Invalid credentials')
+            messages.error(request, 'Invalid credentials')
             return redirect('login')
 
         return redirect('login')
     else:
-        return render(request,'accounts/login.html')
+        return render(request, 'accounts/login.html')
 
 
 def dashboard(request):
-    return render(request,'accounts/dashboard.html')
+    user_contacts = Contact.objects.order_by(
+        '-contact_date').filter(user_id=request.user.id)
+    context = {
+        'contacts': user_contacts
+    }
+    return render(request, 'accounts/dashboard.html', context=context)
+
 
 def logout(request):
     if request.method == "POST":
         auth.logout(request)
-        messages.success(request,"Logged Out")
+        messages.success(request, "Logged Out")
         return redirect('index')
-    return redirect(request,'accounts/login.html')
+    return redirect(request, 'accounts/login.html')
