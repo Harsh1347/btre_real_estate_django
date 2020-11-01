@@ -1,1 +1,1 @@
-# django_app
+# Real Estate App using Django
